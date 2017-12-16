@@ -1,0 +1,14 @@
+简单商城总结：基于MVC设计模式
+1、应用中发生的异常需要统一处理，由TransactionFilter捕获并处理，回滚数据库操作。
+2、数据库的插入语句最好返回主键，参数需要进行转化，不要直接传String，这样可以做到简单验证。
+3、前端界面的路径要设置的相对路径，后端最好设置绝对路径，可以使用<base href>来使得浏览器路径和服务器内部路径一致，
+	具体如：<base href="${pageContext.request.scheme }://${pageContext.request.serverName }:${pageContext.request.serverPort }${pageContext.request.contextPath}/">
+4、Servlet主要用于处理和分类请求，具体的请求处理方式交给Service，Service负责操作DaoImpl
+5、可以使用Filter做好权限验证，字符设置等
+
+存在的不足：
+1、初始设计时，第一次做案例，没有考虑到修改商品价格时和已经购买的商品价格的不同，这里数据库数据取自同一个字段。
+2、系统在安全性和性能上欠缺，没有做到并发访问，
+	比如：修改商品时存在同时购物的情况，多个用户抢购最后一件商品的情况，密码没有加密，服务器访问没有进行访问合法验证等等。
+3、界面设计一般，采用JSP界面，没有多设备适配。
+4、简单的案例，不能算是真正的商城。

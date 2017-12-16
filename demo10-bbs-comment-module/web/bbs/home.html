@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>评论列表</title>
+    <link rel="stylesheet" href="layui/css/layui.css">
+    <link rel="stylesheet" type="text/css" href="css/home.css">
+    <link rel="stylesheet" type="text/css" href="css/reset.css">
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery.cookie.js"></script>
+    <script src="layui/layui.js"></script>
+    <script src="js/xml.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/home.js"></script>
+    <script>
+        function removeCommentReply(obj) {
+            var commentId = getCommentId(obj.id);
+            var args = {
+                "userId": myUserId,
+                "commentId": commentId,
+            };
+            sendData(api.comment.reply.delete, function(res) {
+                console.log(res);
+                if (res.success) {
+                    removeNode(obj);
+                }
+            }, args);
+        }
+
+        function getCommentId(t) {
+            var ds = t.split("_");
+            var commentId = ds[0];
+            return commentId;
+        }
+
+        var getCommentReplyOut;
+
+        var myUserId;
+
+        $(function() {
+            var myCookie = $.cookie(cookieName);
+            // console.log(myCookie);
+            if (isEmpty(myCookie) == "") {
+                $(location).attr('href', 'index.html');
+                return;
+            }
+            myCookie = eval("(" + myCookie + ")");
+
+            var myUserName = myCookie.name;
+            $("#username").text(myUserName + "，请发言：");
+
+            var myAvatarUrl;
+            myUserId = myCookie.userId;
+
+            // console.log(myUserName);
+            // console.log(myUserId);
+
+            getMyAvatar();
+
+            $("#exitLogin").click(function() {
+                console.log("exitLogin");
+                exitLogin();
+                return false;
+            });
+
+            function getMyAvatar() {
+                var args = {
+                    "userId": myUserId,
+                }
+
+                sendData(api.user.briefInfo, function(res) {
+                    var data = res.data;
+                    var avatarId = data.avatarId;
+                    $("#headimg").attr("src", "img/" + avatarId + ".jpg");
+                }, args);
+            }
+
+            function exitLogin() {
+                $.cookie(cookieName, null, {
+                    path: "/bbs"
+                });
+                layer.msg("退出登陆成功");
+                setTimeout(function() {
+                    $(location).attr('href', 'index.html');
+                }, 1000);
+            }
+
+            function getCommentMain() {
+                var args = {
+                    "page": 1,
+                    "rows": 10,
+                };
+                sendData(api.comment.main.find, function(res) {
+                    console.log(res);
+                    commentMain = res.data.each;
+                    processCommentMain(commentMain);
+                }, args);
+            }
+
+            getCommentMain();
+
+            var commentMain;
+
+            function removeCommentMain(commentId) {
+                var args = {
+                    "userId": myUserId,
+                    "commentId": commentId,
+                };
+                sendData(api.comment.main.delete, function(res) {
+                    console.log(res);
+                    if (res.success) {
+                        getCommentMain();
+                    } else {
+                        layer.msg(res.data.msg);
+                    }
+                }, args);
+            }
+
+            function processCommentReply(commentMain) {
+                for (var i = 0; i < commentMain.length; i++) {
+                    var parentCommentId = commentMain[i].commentId;
+                    var userId = commentMain[i].userId;
+                    var combox = parentCommentId + "_" + userId;
+                    getCommentReply(parentCommentId, combox);
+                }
+            }
+
+            getCommentReplyOut = getCommentReply;
+
+            function getCommentReply(parentCommentId, combox) {
+                var args = {
+                    "parentCommentId": parentCommentId
+                };
+                sendData(api.comment.reply.find, function(res) {
+                    console.log(res);
+                    var children = res.data.children;
+                    if (isEmpty(children) == "")
+                        return;
+                    var ih = [];
+                    processCommentReplyDetail(res.data, res.data, children, 0, ih);
+                    // console.log(ih);
+                    $("#" + combox).find(".comment-list").html(ih.join(""));
+                }, args);
+            }
+
+            function processCommentReplyDetail(data, parent, children, level, ih) {
+                if (isEmpty(children) == "")
+                    return;
+                for (var i = 0; i < children.length; i++) {
+                    var item = children[i];
+                    var commentId = item.commentId;
+                    var text = item.text;
+                    var time = item.time;
+                    var userId = item.userId;
+                    var userAvatarId = item.userAvatarId;
+                    var userName = item.userName;
+                    var temp = "<div id=\"" + commentId + "_" + userId + "\" class=\"comment-box clearfix\" user=\"" + (userId == myUserId ? "self" : "other") + "\">" +
+                        "<img class=\"myhead\" src=\"img/" + userAvatarId + ".jpg\" alt=\"\">" +
+                        "<input class=\"userName\" type=\"hidden\" value=\"" + userName + "\"/>" +
+                        " <div class=\"comment-content\">" +
+                        "<p class=\"comment-text\"><span class=\"user\">" + userName + (level < 1 ? "：" : (" 回复 " + parent.userName + "：")) + "</span>" + text + "</p>" +
+                        "<p class=\"comment-time\">" +
+                        formateDate(new Date(time)) +
+                        // "<a href=\"javascript:;\" class=\"comment-praise\" total=\"0\" my=\"0\">赞</a>" +
+                        "<a href=\"javascript:;\" class=\"comment-operate\">" + (userId == myUserId ? "删除" : "回复") + "</a>" +
+                        "</p>" +
+                        "</div>" +
+                        "</div>";
+                    // console.log(temp);
+                    ih.push(temp);
+                    var childrenr = item.children;
+                    processCommentReplyDetail(data, item, childrenr, level + 1, ih);
+                }
+            }
+
+            function addCommentMain() {
+                var text = $headComment.val();
+                var args = {
+                    "userId": myUserId,
+                    "text": text,
+                };
+                sendData(api.comment.main.add, function(res) {
+                    console.log(res);
+                    if (res.success) {
+                        getCommentMain();
+                    } else {
+                        layer.msg(res.data.msg);
+                    }
+                }, args);
+            }
+
+            function processCommentMain(commentMain) {
+                $("#list").html("");
+
+                var len = commentMain.length;
+                var flag = true;
+                for (var i = 0; i < len - 1 && flag; i++) {
+                    for (var j = 0; j < len - 1 - i; j++) {
+                        if (commentMain[j].time < commentMain[j + 1].time) {
+                            flag = false;
+                            var tmp = commentMain[j + 1];
+                            commentMain[j + 1] = commentMain[j];
+                            commentMain[j] = tmp;
+                        }
+                    }
+                }
+
+                for (var i = 0; i < len; i++) {
+                    var ih = $("#list").html();
+                    var item = commentMain[i];
+                    var commentId = item.commentId;
+                    var text = item.text;
+                    var time = item.time;
+                    var userId = item.userId;
+                    var userAvatarId = item.userAvatarId;
+                    var userName = item.userName;
+                    var child = "<div id=" + commentId + "_" + userId + " class=\"box clearfix\">" +
+                        (userId == myUserId ? ("<a class=\"close\" href=\"javascript:;\">×</a>") : "") +
+                        "<img class=\"head\" src=\"img/" + userAvatarId + ".jpg\" alt=\"\"/>" +
+                        "<div class=\"content\">" +
+                        "<div class=\"main\">" +
+                        " <p class=\"txt\">" +
+                        "<span class=\"user\">" + userName + "：</span>" + text + "" +
+                        "  </p>" +
+                        "  </div>" +
+                        "<div class=\"info clearfix\">" +
+                        "   <span class=\"time\">" + formateDate(new Date(time)) + "</span>" +
+                        // "<a class=\"praise\" href=\"javascript:;\">赞</a>" +
+                        " </div>" +
+                        "  <div class=\"praises-total\" total=\"0\" style=\"display: none;\"></div>" +
+                        " <div class=\"comment-list\">" +
+
+                        " </div>" +
+                        " <div class=\"text-box\">" +
+                        "     <textarea class=\"comment\" autocomplete=\"off\">评论…</textarea>" +
+                        "      <button class=\"btn \">回 复</button>" +
+                        "      <span class=\"word\"><span class=\"length\">0</span>/140</span>" +
+                        "<input class=\"commentInfo\" type=\"hidden\" value=\"\"/>" +
+                        "   </div>" +
+                        "</div>" +
+                        " </div>";
+                    $("#list").html(ih + child);
+                }
+
+                $(".close").click(function() {
+                    removeCommentMain(getCommentId(this.parentNode.id));
+                });
+
+                test();
+
+                processCommentReply(commentMain);
+            }
+
+            var headComment = document.getElementById("headComment");
+            var $headComment = $(headComment);
+
+            processHeadComment();
+
+            $("#addComment").click(function() {
+                addCommentMain();
+            });
+
+            function processHeadComment() {
+                headComment.onfocus = function() {
+                    this.parentNode.className = 'text-box text-box-on';
+                    this.value = this.value == '评论…' ? '' : this.value;
+                    // this.onkeyup();
+                }
+
+                //评论失去焦点
+                headComment.onblur = function() {
+                    var me = this;
+                    var val = me.value;
+                    if (val == '') {
+                        timer = setTimeout(function() {
+                            me.value = '评论…';
+                            //me.parentNode.className = 'text-box text-box-on';
+                        }, 200);
+                    }
+                }
+
+                //评论按键事件
+                headComment.onkeyup = function() {
+                    var val = this.value;
+                    var len = val.length;
+                    var els = this.parentNode.children;
+                    var btn = els[1];
+                    var word = els[2];
+                    if (len <= 0 || len > 140) {
+                        btn.className = 'btn btn-off';
+                    } else {
+                        btn.className = 'btn';
+                    }
+                    word.innerHTML = len + '/140';
+                }
+            }
+
+        })
+    </script>
+</head>
+
+<body id="body">
+
+    <div class="box clearfix head-comment">
+        <div>
+            <img class="head" id="headimg" src="img/3.jpg" alt="" />
+            <a id="exitLogin" href="#">[退出]</a>
+            <span id="username">XXX，请发言：</span>
+        </div>
+        <div class="content">
+            <div class="text-box text-box-on">
+                <textarea id="headComment" class="comment" autocomplete="off">评论…</textarea>
+                <button id="addComment" class="btn btn-off">评 论</button>
+                <span class="word">0/140</span>
+            </div>
+        </div>
+    </div>
+
+    <hr/>
+
+    <div id="list">
+
+    </div>
+
+</body>
+
+</html>

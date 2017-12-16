@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!--导入默认的日志配置-->
+    <!--<include resource="org/springframework/boot/logging/logback/base.xml"/>-->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!--spring的log配置-->
+    <logger name="org.springframework.web" level="INFO"/>
+
+    <!--只在开发环境下启用-->
+    <springProfile name="dev">
+
+        <!--mybatis的log配置-->
+        <logger name="org.mybatis" level="DEBUG"/>
+
+        <!--druid的log配置-->
+        <logger name="com.alibaba.druid" level="DEBUG"/>
+
+        <!--自定义log的配置-->
+        <logger name="com.chain.project" level="DEBUG"/>
+
+    </springProfile>
+
+    <!-- 文件输出格式 -->
+    <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+
+    <!-- test文件路径 -->
+    <property name="TEST_FILE_PATH" value="logs/test"/>
+
+    <!-- prod文件路径（可以修改为其他路径） -->
+    <property name="PROD_FILE_PATH" value="logs/prod"/>
+
+    <!-- 开发环境(只输出到控制台) -->
+    <springProfile name="dev">
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="STDOUT"/>
+        </root>
+    </springProfile>
+
+    <!-- 测试环境(输出到控制台和文件) -->
+    <springProfile name="test">
+
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            </encoder>
+        </appender>
+
+        <!-- ch.qos.logback.core.rolling.RollingFileAppender 文件日志输出 -->
+        <appender name="TEST-FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!--不能有这项配置-->
+            <!--<Encoding>UTF-8</Encoding>-->
+            <File>${TEST_FILE_PATH}/carserver.log</File>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <FileNamePattern>${TEST_FILE_PATH}/carserver.%d{yyyy-MM-dd}-%i.log</FileNamePattern>
+                <MaxHistory>30</MaxHistory>
+                <TimeBasedFileNamingAndTriggeringPolicy
+                        class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <MaxFileSize>10KB</MaxFileSize>
+                </TimeBasedFileNamingAndTriggeringPolicy>
+            </rollingPolicy>
+
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>${PATTERN}</pattern>
+            </layout>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="STDOUT"/>
+            <appender-ref ref="TEST-FILE"/>
+        </root>
+
+    </springProfile>
+
+    <!-- 生产环境(只输出到文件) -->
+    <springProfile name="prod">
+
+        <!-- ch.qos.logback.core.rolling.RollingFileAppender 文件日志输出 -->
+        <appender name="PROD_FILE"
+                  class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!--<Encoding>UTF-8</Encoding>-->
+            <File>${PROD_FILE_PATH}/carserver.log</File>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <FileNamePattern>${PROD_FILE_PATH}/carserver.%d{yyyy-MM-dd}-%i.log</FileNamePattern>
+                <MaxHistory>30</MaxHistory>
+                <TimeBasedFileNamingAndTriggeringPolicy
+                        class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <MaxFileSize>50MB</MaxFileSize>
+                </TimeBasedFileNamingAndTriggeringPolicy>
+            </rollingPolicy>
+            <layout class="ch.qos.logback.classic.PatternLayout">
+                <pattern>${PATTERN}</pattern>
+            </layout>
+        </appender>
+
+        <root level="INFO">
+            <appender-ref ref="PROD_FILE"/>
+        </root>
+
+    </springProfile>
+
+</configuration>

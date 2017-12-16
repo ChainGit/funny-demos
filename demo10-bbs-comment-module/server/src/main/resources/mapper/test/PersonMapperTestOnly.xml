@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--使用PageHelper时SQL语句末尾不要有分号-->
+<mapper namespace="com.chain.project.test.mapper.PersonMapper">
+
+    <!--不要log就是EhcacheCache,默认在日记级别为DEBUG时可以看到-->
+    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>
+
+    <!--其实只要保持数据库表字段和实体类一致可以无需映射，比如person_name和personName-->
+    <resultMap id="BaseResultMap" type="com.chain.project.test.entities.PersonEntity">
+        <id column="id" jdbcType="BIGINT" javaType="java.lang.Long" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="updateTime"/>
+        <result column="delete_flag" jdbcType="INTEGER" javaType="java.lang.Integer" property="deleteFlag"/>
+        <result column="name" jdbcType="VARCHAR" javaType="java.lang.String" property="name"/>
+        <result column="age" jdbcType="INTEGER" javaType="java.lang.Integer" property="age"/>
+    </resultMap>
+
+    <sql id="BaseColumnList">
+        id, create_time, update_time, delete_flag, name, age
+    </sql>
+
+    <select id="findById" parameterType="long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_test
+        WHERE id = #{id} AND delete_flag = 0
+    </select>
+
+    <select id="queryListAll" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_test
+        WHERE delete_flag = 0
+    </select>
+
+    <update id="update" parameterType="PersonEntity">
+        UPDATE t_test
+        <set>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="age != null">
+                age = #{age,jdbcType=INTEGER},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        UPDATE t_test
+        SET delete_flag = 1
+        WHERE id = #{id}
+    </delete>
+
+    <insert id="insert" parameterType="PersonEntity">
+        INSERT INTO t_test
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="age != null">
+                age,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=BIGINT},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null">
+                #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="age != null">
+                #{age,jdbcType=INTEGER},
+            </if>
+        </trim>
+    </insert>
+
+</mapper>

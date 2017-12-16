@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>注册用户</title>
+<script type="text/javascript" src="base/js/jquery-1.8.3.js"></script>
+<script type="text/javascript">
+	$(function() {
+		var url = "user.do?a=exit";
+		var args = {
+			"time" : new Date().getTime()
+		};
+		$.post(url, args, null);
+
+		function getParameter(url, name) {
+			var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+			var r = url.match(reg);
+			if (r != null)
+				return unescape(r[2]);
+			return null;
+		}
+
+		var res = getParameter(window.location.search.substr(1), "res");
+
+		if (parseInt(res) > -1)
+			$("#msg").text("注册成功");
+
+	})
+</script>
+</head>
+<body>
+
+	<center>
+		<h4>注册用户</h4>
+		<a href="login.html">返回登陆</a><br />
+		<p id="msg"></p>
+		<br />
+		<form action="user.do?a=add" method="post">
+			<label>账户名称：</label><input type="text" name="username" /><br /> <label>账户密码：</label><input
+				type="password" name="password" /><br /> <label>账户余额：</label><input
+				type="text" name="balance" /><br /> <br /> <input type="submit"
+				value="注册" />
+		</form>
+	</center>
+
+</body>
+</html>

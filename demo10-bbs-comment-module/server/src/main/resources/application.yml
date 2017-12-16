@@ -1,0 +1,66 @@
+### 开发/测试/生产环境分别对应dev/test/prod
+## 开发环境：消息均是默认不加密的（即便设置Result的encrypt为true也不会加密）
+## 测试和生产环境：消息均是默认加密的（接收时参数key为"ns"，以及返回的Result设置encrypt为false的除外）
+## 生产环境不加载test测试接口
+# 打包成jar包后，启动命令示例：java -jar -Dspring.profiles.active=dev carserver.jar
+# spring-boot推崇只有变化的配置内容才写在外部文件中，更推荐无配置开发（注解配置+自动配置+代码配置）
+# （。＾▽＾）
+spring:
+  #################################
+  ### == 开发和部署记得修改这里 == ###
+  #################################
+  profiles:
+    active: dev
+    # active: test
+    # active: prod
+  #################################
+  # 数据源配置
+  datasource:
+      # 具体可以参照：https://github.com/alibaba/druid/tree/master/druid-spring-boot-starter
+      druid:
+        stat-view-servlet:
+          login-username: admin
+          login-password: admin
+          reset-enable: true
+
+# 全局日志配置
+logging:
+  # 生产环境下可以更改xml文件中的PROD_FILE_PATH值
+  config: classpath:logging-config.xml
+
+# 能显示更多的控制台日志信息
+debug: false
+
+# 部署端口等设置
+# spring-boot默认是全局UTF-8
+server:
+  port: 8080
+  context-path: /
+
+# 显示在主页上的信息
+app:
+  # mybatis的type-alias-package，对应DataSourceConfig的getFull方法
+  # test目录会根据spring.profiles.active自动选择启用还是不启用
+  # 如果新建了package请及时完善配置，不可以设置成"*"或其他形式
+  # 示例：test,web.cash,web.apply
+  mybatis-alias:
+    package: base,test,more,unit
+  # 项目中的API的目录，其他访问会自动过滤，不返回任何数据，访问根目录"/"除外
+  # test目录会根据spring.profiles.active自动选择启用还是不启用
+  ## 加入默认的error则会显示出错时的返回的错误信息，不加入服务器会如同沉默没有回复的信息
+  # 设置为空则表示不过滤任何请求的目录，直接通过
+  api-url:
+    # package: druid,test
+    package: error,druid,test,more,user,comment
+  crypto:
+    # 服务器接收数据的默认解密方法
+    # 可以赋值为none,rsa-pub,rsa-pri,des,aes,md5,base64
+    recv-default-mode: rsa-pri
+    # 服务器发送数据的默认加密方法
+    # 可以赋值为none,rsa-pub,rsa-pri,des,aes,md5,base64
+    send-default-mode: aes
+  ###############################################
+  # 信息显示
+  name: Chain Project Template - Server
+  # 版本号
+  version: v0.0.1

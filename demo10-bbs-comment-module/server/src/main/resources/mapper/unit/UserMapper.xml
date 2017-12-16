@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--使用PageHelper时SQL语句末尾不要有分号-->
+<mapper namespace="com.chain.project.unit.mapper.UserMapper">
+
+    <!--不要log就是EhcacheCache,默认在日记级别为DEBUG时可以看到-->
+    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>
+
+    <!--其实只要保持数据库表字段和实体类一致可以无需映射，比如person_name和personName-->
+    <resultMap id="BaseResultMap" type="com.chain.project.unit.entities.UserEntity">
+        <id column="id" jdbcType="BIGINT" javaType="java.lang.Long" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="updateTime"/>
+        <result column="delete_flag" jdbcType="INTEGER" javaType="java.lang.Integer" property="deleteFlag"/>
+        <result column="uid" jdbcType="BIGINT" javaType="java.lang.Long" property="userId"/>
+        <result column="name" jdbcType="VARCHAR" javaType="java.lang.String" property="name"/>
+        <result column="password" jdbcType="VARCHAR" javaType="java.lang.String" property="password"/>
+        <result column="avatar_id" jdbcType="INTEGER" javaType="java.lang.Integer" property="avatarId"/>
+        <result column="last_comment" jdbcType="TIMESTAMP" javaType="java.util.Date" property="lastComment"/>
+    </resultMap>
+
+    <sql id="BaseColumnList">
+        id, create_time, update_time, delete_flag, uid, name, password, avatar_id, last_comment
+    </sql>
+
+    <select id="findById" parameterType="long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_user
+        WHERE id = #{id} AND delete_flag = 0
+    </select>
+
+    <update id="update" parameterType="UserEntity">
+        update t_user
+        <set>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="userId != null">
+                uid = #{userId,jdbcType=INTEGER},
+            </if>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                password = #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="avatarId != null">
+                avatar_id = #{avatarId,jdbcType=INTEGER},
+            </if>
+            <if test="lastComment != null">
+                last_comment = #{lastComment,jdbcType=INTEGER},
+            </if>
+        </set>
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        UPDATE t_user
+        SET delete_flag = 1
+        WHERE id = #{id} AND delete_flag = 0
+    </delete>
+
+    <insert id="insert" parameterType="UserEntity">
+        insert into t_user
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="userId != null">
+                uid,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="password != null">
+                password,
+            </if>
+            <if test="avatarId != null">
+                avatar_id,
+            </if>
+            <if test="lastComment != null">
+                last_comment,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=BIGINT},
+            </if>
+            <if test="userId != null">
+                #{userId,jdbcType=BIGINT},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null">
+                #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="password != null">
+                #{password,jdbcType=VARCHAR},
+            </if>
+            <if test="avatarId != null">
+                #{avatarId,jdbcType=INTEGER},
+            </if>
+            <if test="lastComment != null">
+                #{lastComment,jdbcType=INTEGER},
+            </if>
+        </trim>
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <resultMap id="findLastCommentResultMap" type="java.util.Map">
+        <result column="last_comment" jdbcType="TIMESTAMP" javaType="java.util.Date" property="lastComment"/>
+    </resultMap>
+
+    <select id="findLastComment" parameterType="java.lang.Long" resultMap="findLastCommentResultMap">
+        SELECT last_comment
+        FROM t_user
+        WHERE uid = #{userId} AND delete_flag = 0
+    </select>
+
+    <select id="findByName" parameterType="java.lang.String" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_user
+        WHERE name = #{name} AND delete_flag = 0
+    </select>
+
+    <select id="findByUserId" parameterType="java.lang.Long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_user
+        WHERE uid = #{userId} AND delete_flag = 0
+    </select>
+
+    <update id="updateLastComment" parameterType="java.util.Map">
+        UPDATE t_user u
+        SET
+            u.last_comment = #{lastComment}
+        WHERE u.delete_flag = 0 AND u.uid = #{userId}
+    </update>
+
+</mapper>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>注册/登陆</title>
+    <link rel="stylesheet" href="layui/css/layui.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+    <script src="js/jquery-1.8.3.js"></script>
+    <script src="js/jquery.cookie.js"></script>
+    <script src="layui/layui.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        var layer = null;
+
+        layui.use('layer', function() {
+            layer = layui.layer;
+            // layer.msg('欢迎使用');
+        });
+
+        var avatarId = null;
+        $(document).ready(function() {
+
+            var myCookie = $.cookie(cookieName);
+            console.log(myCookie)
+            if (myCookie != "null" && isEmpty(myCookie) != "") {
+                $(location).attr('href', 'home.html');
+                return;
+            }
+
+            avatarId = Math.round((Math.random() * 9));
+            // console.log(avatarId);
+
+            $("#avatarId").attr("src", "img/" + avatarId + ".jpg");
+
+            $(".form").slideDown(500);
+
+            $("#landing").addClass("border-btn");
+
+            $("#registered").click(function() {
+                $("#landing").removeClass("border-btn");
+                $("#landing-content").hide(500);
+                $(this).addClass("border-btn");
+                $("#registered-content").show(500);
+
+            })
+
+            $("#landing").click(function() {
+                $("#registered").removeClass("border-btn");
+                $(this).addClass("border-btn");
+
+                $("#landing-content").show(500);
+                $("#registered-content").hide(500);
+            })
+
+            $(".login").click(function() {
+                var name = $("#username").val();
+                var pass = $("#password").val();
+                var args = {
+                    "name": name,
+                    "password": pass,
+                };
+                sendData(api.user.signin, function(data) {
+                    var success = data.success;
+                    if (success) {
+                        var userId = data.data.userId;
+                        if (isEmpty(userId) != "") {
+                            var data = {
+                                "name": name,
+                                "userId": userId,
+                            };
+                            data = JSON.stringify(data)
+                            $.cookie(cookieName, data);
+                            layer.msg("登陆成功");
+                            setTimeout(function() {
+                                $(location).attr('href', 'home.html');
+                            }, 1000);
+                        } else {
+                            layer.msg("登陆失败");
+                        }
+                    } else {
+                        layer.msg("登陆失败");
+                    }
+                }, args);
+            });
+
+            $(".signup").click(function() {
+                var name = $("#rusername").val();
+                var pass = $("#rpassword").val();
+                var args = {
+                    "name": name,
+                    "password": pass,
+                    "avatarId": avatarId,
+                };
+                sendData(api.user.signup, function(data) {
+                    var success = data.success;
+                    if (success) {
+                        layer.msg("注册成功，请登陆");
+                        $("#registered").removeClass("border-btn");
+                        $(this).addClass("border-btn");
+                        $("#landing-content").show(500);
+                        $("#registered-content").hide(500);
+                    } else {
+                        layer.msg("注册失败");
+                    }
+                }, args);
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div class="form">
+        <div id="landing">登录</div>
+        <div id="registered">注册</div>
+        <div class="fix"></div>
+
+        <div id="landing-content">
+            <div class="inp"><input id="username" type="text" placeholder="用户名" /></div>
+            <div class="inp"><input id="password" type="password" placeholder="密码" /></div>
+            <div class="login">登录</div>
+        </div>
+
+        <div id="registered-content">
+            <div id="photo"><img id="avatarId" src="img/0.jpg" /></div>
+            <div class="inp"><input id="rusername" type="text" placeholder="请输入用户名" /></div>
+            <div class="inp"><input id="rpassword" type="password" placeholder="请输入密码" /></div>
+            <div class="signup">立即注册</div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--使用PageHelper时SQL语句末尾不要有分号-->
+<mapper namespace="com.chain.project.unit.mapper.CommentMapper">
+
+    <!--不要log就是EhcacheCache,默认在日记级别为DEBUG时可以看到-->
+    <cache type="org.mybatis.caches.ehcache.LoggingEhcache"/>
+
+    <!--其实只要保持数据库表字段和实体类一致可以无需映射，比如person_name和personName-->
+    <resultMap id="BaseResultMap" type="com.chain.project.unit.entities.CommentEntity">
+        <id column="id" jdbcType="BIGINT" javaType="java.lang.Long" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="updateTime"/>
+        <result column="delete_flag" jdbcType="INTEGER" javaType="java.lang.Integer" property="deleteFlag"/>
+        <result column="cid" jdbcType="BIGINT" javaType="java.lang.Long" property="commentId"/>
+        <result column="text" jdbcType="VARCHAR" javaType="java.lang.String" property="text"/>
+        <result column="uid" jdbcType="BIGINT" javaType="java.lang.Long" property="userId"/>
+        <result column="pid" jdbcType="BIGINT" javaType="java.lang.Long" property="parentId"/>
+    </resultMap>
+
+    <sql id="BaseColumnList">
+        id, create_time, update_time, delete_flag, cid, text, uid, pid
+    </sql>
+
+    <select id="findById" parameterType="long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_comment
+        WHERE id = #{id} AND delete_flag = 0
+    </select>
+
+    <update id="update" parameterType="CommentEntity">
+        update t_comment
+        <set>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag = #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="commentId != null">
+                cid = #{commentId,jdbcType=BIGINT},
+            </if>
+            <if test="text != null">
+                text = #{text,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null">
+                uid = #{userId,jdbcType=BIGINT},
+            </if>
+            <if test="parentId != null">
+                pid = #{parentId,jdbcType=BIGINT},
+            </if>
+        </set>
+        where id = #{id,jdbcType=BIGINT}
+    </update>
+
+    <delete id="deleteById" parameterType="long">
+        UPDATE t_comment
+        SET delete_flag = 1
+        WHERE id = #{id} AND delete_flag = 0
+    </delete>
+
+    <insert id="insert" parameterType="CommentEntity">
+        insert into t_comment
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                id,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="deleteFlag != null">
+                delete_flag,
+            </if>
+            <if test="commentId != null">
+                cid,
+            </if>
+            <if test="text != null">
+                text,
+            </if>
+            <if test="userId != null">
+                uid,
+            </if>
+            <if test="parentId != null">
+                pid,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="id != null">
+                #{id,jdbcType=BIGINT},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="deleteFlag != null">
+                #{deleteFlag,jdbcType=INTEGER},
+            </if>
+            <if test="commentId != null">
+                #{commentId,jdbcType=BIGINT},
+            </if>
+            <if test="text != null">
+                #{text,jdbcType=VARCHAR},
+            </if>
+            <if test="userId != null">
+                #{userId,jdbcType=BIGINT},
+            </if>
+            <if test="parentId != null">
+                #{parentId,jdbcType=BIGINT},
+            </if>
+        </trim>
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER">
+            SELECT LAST_INSERT_ID() AS id
+        </selectKey>
+    </insert>
+
+    <resultMap id="findMainResultMap" type="java.util.Map">
+        <result column="name" property="userName"/>
+        <result column="avatar_id" property="userAvatarId"/>
+        <result column="uid" property="userId"/>
+        <result column="update_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="time"/>
+        <result column="text" property="text"/>
+        <result column="cid" property="commentId"/>
+    </resultMap>
+
+    <select id="findMain" resultMap="findMainResultMap">
+        SELECT
+            u.name,
+            u.avatar_id,
+            u.uid,
+            c.update_time,
+            c.text,
+            c.cid
+        FROM t_user u LEFT JOIN t_comment c ON c.uid = u.uid
+        WHERE c.pid IS NULL AND c.delete_flag = 0 AND u.delete_flag = 0
+    </select>
+
+    <select id="findByCommentId" parameterType="java.lang.Long" resultType="CommentEntity">
+        SELECT
+        <include refid="BaseColumnList"/>
+        FROM t_comment
+        WHERE cid = #{commentId} AND delete_flag = 0
+    </select>
+
+    <update id="deleteReply" parameterType="java.lang.Long">
+        # 只删除一条记录本身
+        #         UPDATE t_comment
+        #         SET delete_flag = 1
+        #         WHERE uid = {userId} AND cid = {commentId} AND pid IS NOT NULL
+        # 删除该回复下的所有的子回复
+        UPDATE t_comment c
+        SET c.delete_flag = 1
+        WHERE FIND_IN_SET(cid, queryReply(#{commentId})) AND c.delete_flag = 0
+    </update>
+
+    <resultMap id="findReplyResultMap" type="java.util.Map">
+        <result column="uid" property="userId"/>
+        <result column="name" property="userName"/>
+        <result column="avatar_id" property="userAvatarId"/>
+        <result column="update_time" jdbcType="TIMESTAMP" javaType="java.util.Date" property="time"/>
+        <result column="cid" property="commentId"/>
+        <result column="pid" property="parentId"/>
+        <result column="text" property="text"/>
+    </resultMap>
+
+    <select id="findReply" parameterType="java.lang.Long" resultMap="findReplyResultMap">
+        #不能根据不同的父id取出所有的节点，只是取出了所有的节点
+        #         SELECT
+        #             c2.update_time,
+        #             c2.cid,
+        #             c2.uid,
+        #             c2.pid,
+        #             c2.text,
+        #             u.avatar_id,
+        #             u.name
+        #         FROM t_comment c1 LEFT JOIN t_comment c2
+        #                 ON c1.cid = c2.pid
+        #             LEFT JOIN t_user u
+        #                 ON u.uid = c2.uid
+        #         WHERE c1.delete_flag = 0 AND c2.delete_flag = 0
+        SELECT
+            t1.uid,
+            t1.name,
+            t1.avatar_id,
+            t2.update_time,
+            t2.cid,
+            t2.pid,
+            t2.text
+        FROM
+            (
+                SELECT
+                    u.uid,
+                    u.name,
+                    u.avatar_id
+                FROM t_user u
+                WHERE u.delete_flag = 0
+            ) AS t1
+            ,
+            (
+                SELECT
+                    c.update_time,
+                    c.uid,
+                    c.cid,
+                    c.pid,
+                    c.text
+                FROM t_comment c
+                WHERE FIND_IN_SET(cid, queryReply(#{parentCommentId})) AND c.delete_flag = 0
+            ) AS t2
+        WHERE t1.uid = t2.uid
+    </select>
+
+</mapper>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<c3p0-config>
+
+	<named-config name="easyshop">
+
+		<property name="user">chain</property>
+		<property name="password">0702</property>
+		<property name="jdbcUrl">jdbc:mysql://192.168.56.2/easyshop_test</property>
+		<property name="driverClass">com.mysql.jdbc.Driver</property>
+
+		<property name="acquireIncrement">2</property>
+		<property name="initialPoolSize">5</property>
+		<property name="minPoolSize">5</property>
+		<property name="maxPoolSize">10</property>
+
+		<property name="maxStatements">20</property>
+		<property name="maxStatementsPerConnection">5</property>
+
+	</named-config>
+</c3p0-config>

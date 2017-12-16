@@ -1,0 +1,27 @@
+# 自定义配置
+app:
+  crypto:
+    # 是否启用加密
+    status: true
+    # 密钥文件位置（建议放在非项目目录下,且使用绝对路径）
+    rsa-public-key: classpath:crypto/public.key
+    rsa-private-key: classpath:crypto/private.key
+    # rsa-public-key: /opt/crypto/carserver/public.key
+    # rsa-private-key: /opt/crypto/carserver/private.key
+    des-first-key: classpath:crypto/des1.key
+    des-second-key: classpath:crypto/des2.key
+    des-third-key: classpath:crypto/des3.key
+    aes-key: classpath:crypto/aes.key
+    aes-iv-key: classpath:crypto/aes-iv.key
+
+# spring的配置
+spring:
+  # 配置数据源
+  datasource:
+    # 基本数据库信息
+    url: jdbc:mysql://localhost:3306/car?useUnicode=true&characterEncoding=utf-8
+    # url: jdbc:mysql://localhost:3306/car?useUnicode=true&characterEncoding=utf-8
+    # RSA公钥加密的
+    username: xxx
+    # RSA公钥加密的
+    password: xxx
